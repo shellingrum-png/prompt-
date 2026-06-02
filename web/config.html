@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>批量提示词测试系统 - 配置中心</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+               background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+               min-height: 100vh; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { color: white; text-align: center; margin-bottom: 20px; font-size: 28px; }
+        .subtitle { color: rgba(255,255,255,0.9); text-align: center; margin-bottom: 30px; }
+        .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; 
+                box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        h2 { color: #333; margin-bottom: 16px; font-size: 20px; border-bottom: 2px solid #667eea; 
+             padding-bottom: 10px; display: flex; align-items: center; }
+        h2 span { margin-right: 10px; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; color: #555; }
+        input[type="text"], input[type="number"], select, textarea {
+            width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;
+            font-size: 14px; transition: border-color 0.3s; font-family: inherit;
+        }
+        input:focus, select:focus, textarea:focus { border-color: #667eea; outline: none; }
+        textarea { resize: vertical; min-height: 150px; line-height: 1.6; }
+        .btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+               color: white; border: none; padding: 10px 20px; border-radius: 8px;
+               font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.2s;
+               margin-right: 8px; margin-bottom: 8px; }
+        .btn:hover { transform: translateY(-2px); }
+        .btn-secondary { background: #6c757d; }
+        .btn-success { background: #28a745; }
+        .btn-info { background: #17a2b8; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+        .code-block { background: #1e1e1e; color: #00ff00; padding: 16px; border-radius: 8px;
+                      font-family: 'Monaco', 'Menlo', monospace; font-size: 12px; 
+                      overflow-x: auto; white-space: pre-wrap; margin-top: 10px;
+                      max-height: 400px; overflow-y: auto; }
+        .tabs { display: flex; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0; }
+        .tab { padding: 12px 24px; cursor: pointer; border-bottom: 3px solid transparent;
+               font-weight: 600; color: #666; transition: all 0.3s; }
+        .tab.active { color: #667eea; border-bottom-color: #667eea; }
+        .tab:hover { color: #667eea; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .status { margin-top: 16px; padding: 12px; border-radius: 8px; }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.info { background: #d1ecf1; color: #0c5460; }
+        .hint { font-size: 12px; color: #999; margin-top: 4px; }
+        .preset-btns { margin-bottom: 12px; }
+        .preset-btn { font-size: 12px; padding: 6px 12px; background: #e9ecef; 
+                      border: none; border-radius: 4px; cursor: pointer; margin-right: 8px; }
+        .preset-btn:hover { background: #dee2e6; }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚙️ 批量提示词测试系统 - 配置中心</h1>
+        <p class="subtitle">在线编辑配置，一键复制到项目文件</p>
+
+        <!-- 配置编辑区 -->
+        <div class="card">
+            <h2><span>🎯</span>模型配置</h2>
+            
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('api-config')">生成模型</div>
+                <div class="tab" onclick="switchTab('eval-config')">评估模型</div>
+            </div>
+            
+            <div id="api-config" class="tab-content active">
+                <div class="grid">
+                    <div class="form-group">
+                        <label>API Key</label>
+                        <input type="text" id="apiKey" placeholder="sk-..." value="9f485a0c-c4ea-4590-9f07-6d6925e04620">
+                    </div>
+                    <div class="form-group">
+                        <label>Base URL</label>
+                        <input type="text" id="baseUrl" placeholder="https://..." value="https://ark.cn-beijing.volces.com/api/v3">
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="form-group">
+                        <label>模型名称</label>
+                        <input type="text" id="model" placeholder="ep-xxx" value="ep-20250619152516-v97g5">
+                    </div>
+                    <div class="form-group">
+                        <label>温度 (0-2)</label>
+                        <input type="number" id="temperature" step="0.1" min="0" max="2" value="0.7">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>最大输出 Token</label>
+                    <input type="number" id="maxTokens" value="2000">
+                </div>
+            </div>
+            
+            <div id="eval-config" class="tab-content">
+                <div class="grid">
+                    <div class="form-group">
+                        <label>评估模型 API Key</label>
+                        <input type="text" id="evalApiKey" placeholder="sk-..." value="9f485a0c-c4ea-4590-9f07-6d6925e04620">
+                    </div>
+                    <div class="form-group">
+                        <label>评估模型 Base URL</label>
+                        <input type="text" id="evalBaseUrl" placeholder="https://..." value="https://ark.cn-beijing.volces.com/api/v3">
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="form-group">
+                        <label>评估模型名称</label>
+                        <input type="text" id="evalModel" placeholder="ep-xxx" value="ep-20250619152516-v97g5">
+                    </div>
+                    <div class="form-group">
+                        <label>评估温度 (建议0.1-0.3)</label>
+                        <input type="number" id="evalTemperature" step="0.1" min="0" max="2" value="0.3">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="preset-btns">
+                <span>快速预设：</span>
+                <button class="preset-btn" onclick="presetDoubao()">豆包 (Doubao)</button>
+                <button class="preset-btn" onclick="presetOpenAI()">OpenAI</button>
+                <button class="preset-btn" onclick="presetQwen()">通义千问</button>
+                <button class="preset-btn" onclick="presetZhipu()">智谱AI</button>
+            </div>
+        </div>
+
+        <!-- 提示词配置 -->
+        <div class="card">
+            <h2><span>📝</span>提示词配置</h2>
+            
+            <div class="tabs">
+                <div class="tab active" onclick="switchPromptTab('prompt-a')">提示词A</div>
+                <div class="tab" onclick="switchPromptTab('prompt-b')">提示词B</div>
+                <div class="tab" onclick="switchPromptTab('prompt-eval')">评估提示词</div>
+            </div>
+            
+            <div id="prompt-a" class="tab-content active">
+                <div class="form-group">
+                    <label>提示词A - 数据格式化引擎</label>
+                    <textarea id="promptA">你是一个数据格式化引擎。请严格执行以下逻辑步骤，不要执行任何其他任务：
+Step 1: 检查输入文本，提取 [候选人姓名]、[职位]、[当前系统状态]。
+Step 2: 检查输入文本中的对话记录。
+Step 3: 将提取的信息按以下模板输出，不允许添加任何其他字符：
+<candidate_context>
+候选人姓名: {姓名}
+目标职位: {职位}
+当前系统记录状态 (current_status): {状态}
+</candidate_context>
+<dialogue>
+{对话内容}
+</dialogue>
+约束：
+如果没有对话记录，则在 <dialogue> 下方强制输出：[无对话记录]。
+严禁进行自我分析、结论总结或任何【思考】。
+必须输出 <dialogue> 标签，即使内容为空。</textarea>
+                </div>
+            </div>
+            
+            <div id="prompt-b" class="tab-content">
+                <div class="form-group">
+                    <label>提示词B - 招聘数据模拟专家</label>
+                    <textarea id="promptB"># Role
+你是一个资深招聘数据模拟专家，负责为招聘系统的模型测试构建高质量的输入案例。
+
+# Task
+根据我指定的行业，生成一组符合测试要求的输入数据，要求逻辑闭环，能够测试招聘助教模型在"促成入职"方面的能力。
+
+# Output Format
+请严格按照以下 JSON 格式输出，不要包含任何额外说明：
+{
+  "candidate_tags": {
+    "advantages": ["优势1", "优势2"],
+    "risks": ["潜在顾虑/风险标签1", "潜在顾虑/风险标签2"]
+  },
+  "target_job_info": {
+    "position_name": "目标岗位名称",
+    "core_requirements": ["核心要求1", "核心要求2", "核心要求3"]
+  },
+  "latest_dialogue": [
+    "第1轮-文员：...", "第1轮-求职者：...",
+    "第2轮-文员：...", "第2轮-求职者：..."
+  ]
+}
+
+# Requirements for Data Generation
+1. candidate_tags: 必须包含"硬实力"和"软性风险"的矛盾点。
+2. target_job_info: 必须包含行业特定的刚性指标（如：排班、工期、提成比例等）。
+3. latest_dialogue: 对话需模拟真实的招聘沟通过程。每一轮必须包含文员和求职者双方的互动。候选人必须带有一定的"卡点"（如薪资博弈、地理位置、工作强度等），文员表现需具备尝试转化的意图。</textarea>
+                </div>
+            </div>
+            
+            <div id="prompt-eval" class="tab-content">
+                <div class="form-group">
+                    <label>评估提示词 - 结果质量评估</label>
+                    <textarea id="promptEval">你是一个专业的AI输出质量评估师。请对以下生成结果进行评估，从三个维度打分（每个维度0-10分）：
+
+1. 准确性（Accuracy）：结果是否符合输入要求？信息是否准确无误？
+2. 可读性（Readability）：结果格式是否清晰？语言是否通顺易读？
+3. 完整性（Completeness）：是否包含了所有要求的内容？是否有遗漏？
+
+请按以下JSON格式输出，不要包含任何额外内容：
+{
+  "accuracy_score": 分数,
+  "accuracy_reason": "准确性评分理由",
+  "readability_score": 分数,
+  "readability_reason": "可读性评分理由",
+  "completeness_score": 分数,
+  "completeness_reason": "完整性评分理由",
+  "overall_score": 总分(平均分),
+  "suggestions": "改进建议"
+}</textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- 配置生成区 -->
+        <div class="card">
+            <h2><span>💾</span>生成配置文件</h2>
+            
+            <div class="two-col">
+                <div>
+                    <button class="btn btn-success" onclick="generateApiConfig()">生成 API 配置</button>
+                    <button class="btn btn-info" onclick="generatePromptConfig()">生成提示词配置</button>
+                    <button class="btn btn-secondary" onclick="resetConfig()">重置默认</button>
+                </div>
+                <div>
+                    <button class="btn" onclick="exportConfig()">📤 导出全部配置</button>
+                    <button class="btn btn-secondary" onclick="copyToClipboard('api-config-output')">复制 API 配置</button>
+                    <button class="btn btn-secondary" onclick="copyToClipboard('prompt-config-output')">复制提示词配置</button>
+                </div>
+            </div>
+            
+            <div class="grid" style="margin-top: 20px;">
+                <div>
+                    <label>config/api_config.yaml</label>
+                    <div class="code-block" id="api-config-output"></div>
+                </div>
+                <div>
+                    <label>config/prompts_config.yaml</label>
+                    <div class="code-block" id="prompt-config-output"></div>
+                </div>
+            </div>
+            
+            <div id="config-status" class="status info">
+                💡 编辑配置后点击"生成"按钮，然后复制到对应的配置文件中
+            </div>
+        </div>
+
+        <!-- 命令生成区 -->
+        <div class="card">
+            <h2><span>🚀</span>生成运行命令</h2>
+            
+            <div class="grid">
+                <div class="form-group">
+                    <label>输入文件路径</label>
+                    <input type="text" id="inputFile" value="../outputs/会话处理结果.xlsx">
+                </div>
+                <div class="form-group">
+                    <label>输入列名</label>
+                    <select id="inputColumn">
+                        <option value="提示词Ainput">提示词Ainput</option>
+                        <option value="提示词Binput">提示词Binput</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid">
+                <div class="form-group">
+                    <label>提示词类型</label>
+                    <select id="promptType">
+                        <option value="prompt_a">prompt_a (数据格式化)</option>
+                        <option value="prompt_b">prompt_b (数据模拟)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>输出文件路径</label>
+                    <input type="text" id="outputFile" value="results/output.xlsx">
+                </div>
+            </div>
+            <div class="grid">
+                <div class="form-group">
+                    <label>调用间隔（秒）</label>
+                    <input type="number" id="delay" step="0.5" value="1.0">
+                </div>
+                <div class="form-group">
+                    <label>自定义温度（留空使用默认）</label>
+                    <input type="number" id="cmdTemperature" step="0.1" min="0" max="2" placeholder="使用配置文件中的温度">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>选择运行模式</label>
+                <select id="runMode" onchange="generateCommand()">
+                    <option value="pipeline">完整流水线（生成 + 评估）</option>
+                    <option value="run">仅批量生成</option>
+                    <option value="evaluate">仅评估已有结果</option>
+                </select>
+            </div>
+            
+            <button class="btn btn-success" onclick="generateCommand()">生成命令</button>
+            <button class="btn btn-secondary" onclick="copyToClipboard('command-output')">复制命令</button>
+            
+            <div class="code-block" id="command-output"></div>
+        </div>
+
+        <div class="card">
+            <h2><span>📋</span>使用说明</h2>
+            <ol style="color: #555; line-height: 2.2; padding-left: 20px;">
+                <li>在上方编辑你的模型配置和提示词内容</li>
+                <li>点击"生成 API 配置"和"生成提示词配置"</li>
+                <li>复制生成的YAML内容，分别粘贴到项目的 <code>config/api_config.yaml</code> 和 <code>config/prompts_config.yaml</code></li>
+                <li>在"生成运行命令"区域选择参数，生成运行命令</li>
+                <li>在终端执行命令即可开始批量测试</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // 页面加载时初始化
+        window.onload = function() {
+            loadFromLocalStorage();
+            generateApiConfig();
+            generatePromptConfig();
+            generateCommand();
+        };
+
+        // 切换配置Tab
+        function switchTab(tabId) {
+            document.querySelectorAll('#api-config, #eval-config').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            document.querySelectorAll('.tab').forEach((el, idx) => {
+                if (idx < 2) el.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        // 切换提示词Tab
+        function switchPromptTab(tabId) {
+            document.querySelectorAll('#prompt-a, #prompt-b, #prompt-eval').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            document.querySelectorAll('.tab').forEach((el, idx) => {
+                if (idx >= 2) el.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        // 生成API配置
+        function generateApiConfig() {
+            const config = `# API 配置文件
+openai:
+  api_key: "${document.getElementById('apiKey').value}"
+  base_url: "${document.getElementById('baseUrl').value}"
+  model: "${document.getElementById('model').value}"
+  temperature: ${parseFloat(document.getElementById('temperature').value)}
+  max_tokens: ${parseInt(document.getElementById('maxTokens').value)}
+
+evaluation:
+  api_key: "${document.getElementById('evalApiKey').value}"
+  base_url: "${document.getElementById('evalBaseUrl').value}"
+  model: "${document.getElementById('evalModel').value}"
+  temperature: ${parseFloat(document.getElementById('evalTemperature').value)}`;
+            
+            document.getElementById('api-config-output').textContent = config;
+            saveToLocalStorage();
+            showStatus('✅ API配置已生成！');
+        }
+
+        // 生成提示词配置
+        function generatePromptConfig() {
+            const config = `# 提示词配置文件
+
+# 提示词A配置
+prompt_a:
+  name: "数据格式化引擎"
+  system_prompt: |
+${document.getElementById('promptA').value.replace(/^/gm, '    ')}
+
+# 提示词B配置
+prompt_b:
+  name: "招聘数据模拟专家"
+  system_prompt: |
+${document.getElementById('promptB').value.replace(/^/gm, '    ')}
+
+# 评估打分提示词配置
+evaluation_prompt:
+  name: "结果质量评估"
+  system_prompt: |
+${document.getElementById('promptEval').value.replace(/^/gm, '    ')}`;
+            
+            document.getElementById('prompt-config-output').textContent = config;
+            saveToLocalStorage();
+            showStatus('✅ 提示词配置已生成！');
+        }
+
+        // 生成运行命令
+        function generateCommand() {
+            const mode = document.getElementById('runMode').value;
+            const inputFile = document.getElementById('inputFile').value;
+            const outputFile = document.getElementById('outputFile').value;
+            const column = document.getElementById('inputColumn').value;
+            const promptType = document.getElementById('promptType').value;
+            const delay = document.getElementById('delay').value;
+            const temperature = document.getElementById('cmdTemperature').value;
+            
+            let cmd = 'cd batch_test_system && \\\n';
+            cmd += `python3 main.py ${mode} \\\n`;
+            cmd += `  --input ${inputFile} \\\n`;
+            
+            if (mode !== 'evaluate') {
+                cmd += `  --column "${column}" \\\n`;
+                cmd += `  --prompt-type ${promptType} \\\n`;
+            }
+            
+            if (temperature) {
+                cmd += `  --temperature ${temperature} \\\n`;
+            }
+            
+            cmd += `  --delay ${delay} \\\n`;
+            cmd += `  --output ${outputFile}`;
+            
+            document.getElementById('command-output').textContent = cmd;
+        }
+
+        // 复制到剪贴板
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+            
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showStatus('✅ 已复制到剪贴板！');
+                }).catch(() => {
+                    fallbackCopy(text);
+                });
+            } else {
+                fallbackCopy(text);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            showStatus('✅ 已复制到剪贴板！');
+        }
+
+        // 显示状态消息
+        function showStatus(message) {
+            const status = document.getElementById('config-status');
+            status.textContent = message;
+            status.className = 'status success';
+            setTimeout(() => {
+                status.className = 'status info';
+                status.textContent = '💡 编辑配置后点击"生成"按钮，然后复制到对应的配置文件中';
+            }, 3000);
+        }
+
+        // 预设模型配置
+        function presetDoubao() {
+            document.getElementById('baseUrl').value = 'https://ark.cn-beijing.volces.com/api/v3';
+            document.getElementById('evalBaseUrl').value = 'https://ark.cn-beijing.volces.com/api/v3';
+            generateApiConfig();
+            showStatus('✅ 已应用豆包模型预设！');
+        }
+
+        function presetOpenAI() {
+            document.getElementById('baseUrl').value = 'https://api.openai.com/v1';
+            document.getElementById('model').value = 'gpt-4o';
+            document.getElementById('evalBaseUrl').value = 'https://api.openai.com/v1';
+            document.getElementById('evalModel').value = 'gpt-4o';
+            generateApiConfig();
+            showStatus('✅ 已应用OpenAI预设！');
+        }
+
+        function presetQwen() {
+            document.getElementById('baseUrl').value = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+            document.getElementById('model').value = 'qwen-max';
+            document.getElementById('evalBaseUrl').value = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+            document.getElementById('evalModel').value = 'qwen-max';
+            generateApiConfig();
+            showStatus('✅ 已应用通义千问预设！');
+        }
+
+        function presetZhipu() {
+            document.getElementById('baseUrl').value = 'https://open.bigmodel.cn/api/paas/v4';
+            document.getElementById('model').value = 'glm-4';
+            document.getElementById('evalBaseUrl').value = 'https://open.bigmodel.cn/api/paas/v4';
+            document.getElementById('evalModel').value = 'glm-4';
+            generateApiConfig();
+            showStatus('✅ 已应用智谱AI预设！');
+        }
+
+        // 重置配置
+        function resetConfig() {
+            if (confirm('确定要重置为默认配置吗？')) {
+                localStorage.removeItem('promptTestConfig');
+                location.reload();
+            }
+        }
+
+        // 保存到localStorage
+        function saveToLocalStorage() {
+            const config = {
+                apiKey: document.getElementById('apiKey').value,
+                baseUrl: document.getElementById('baseUrl').value,
+                model: document.getElementById('model').value,
+                temperature: document.getElementById('temperature').value,
+                maxTokens: document.getElementById('maxTokens').value,
+                evalApiKey: document.getElementById('evalApiKey').value,
+                evalBaseUrl: document.getElementById('evalBaseUrl').value,
+                evalModel: document.getElementById('evalModel').value,
+                evalTemperature: document.getElementById('evalTemperature').value,
+                promptA: document.getElementById('promptA').value,
+                promptB: document.getElementById('promptB').value,
+                promptEval: document.getElementById('promptEval').value
+            };
+            localStorage.setItem('promptTestConfig', JSON.stringify(config));
+        }
+
+        // 从localStorage加载
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('promptTestConfig');
+            if (saved) {
+                const config = JSON.parse(saved);
+                document.getElementById('apiKey').value = config.apiKey || '';
+                document.getElementById('baseUrl').value = config.baseUrl || '';
+                document.getElementById('model').value = config.model || '';
+                document.getElementById('temperature').value = config.temperature || '0.7';
+                document.getElementById('maxTokens').value = config.maxTokens || '2000';
+                document.getElementById('evalApiKey').value = config.evalApiKey || '';
+                document.getElementById('evalBaseUrl').value = config.evalBaseUrl || '';
+                document.getElementById('evalModel').value = config.evalModel || '';
+                document.getElementById('evalTemperature').value = config.evalTemperature || '0.3';
+                if (config.promptA) document.getElementById('promptA').value = config.promptA;
+                if (config.promptB) document.getElementById('promptB').value = config.promptB;
+                if (config.promptEval) document.getElementById('promptEval').value = config.promptEval;
+            }
+        }
+
+        // 导出全部配置
+        function exportConfig() {
+            generateApiConfig();
+            generatePromptConfig();
+            
+            const fullConfig = `# ============================================
+# 批量提示词测试系统 - 完整配置导出
+# ============================================
+
+# ----- config/api_config.yaml -----
+${document.getElementById('api-config-output').textContent}
+
+# ----- config/prompts_config.yaml -----
+${document.getElementById('prompt-config-output').textContent}
+`;
+            
+            const blob = new Blob([fullConfig], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'batch_test_config.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+            showStatus('✅ 配置已导出！');
+        }
+
+        // 监听输入变化自动保存
+        document.querySelectorAll('input, textarea, select').forEach(el => {
+            el.addEventListener('change', saveToLocalStorage);
+        });
+    </script>
+</body>
+</html>

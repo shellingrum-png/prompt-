@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>批量提示词测试系统</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+               background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+               min-height: 100vh; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { color: white; text-align: center; margin-bottom: 10px; font-size: 28px; }
+        .subtitle { color: rgba(255,255,255,0.9); text-align: center; margin-bottom: 30px; }
+        .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; 
+                box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        h2 { color: #333; margin-bottom: 16px; font-size: 20px; border-bottom: 2px solid #667eea; 
+             padding-bottom: 10px; display: flex; align-items: center; }
+        h2 span { margin-right: 10px; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; color: #555; }
+        input, select, textarea {
+            width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;
+            font-size: 14px; font-family: inherit;
+        }
+        input:focus, select:focus, textarea:focus { border-color: #667eea; outline: none; }
+        textarea { min-height: 120px; resize: vertical; line-height: 1.6; }
+        .btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+               color: white; border: none; padding: 10px 20px; border-radius: 8px;
+               font-size: 14px; font-weight: 600; cursor: pointer; margin-right: 8px; }
+        .btn:hover { transform: translateY(-2px); transition: transform 0.2s; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+        .btn-success { background: #28a745; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+        .tabs { display: flex; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0; flex-wrap: wrap; }
+        .tab { padding: 12px 18px; cursor: pointer; border-bottom: 3px solid transparent;
+               font-weight: 600; color: #666; font-size: 14px; transition: all 0.3s; }
+        .tab.active { color: #667eea; border-bottom-color: #667eea; }
+        .tab:hover { color: #667eea; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .status { margin-top: 16px; padding: 12px; border-radius: 8px; }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.info { background: #d1ecf1; color: #0c5460; }
+        .upload-area { border: 3px dashed #667eea; border-radius: 12px; padding: 40px;
+                       text-align: center; cursor: pointer; transition: all 0.3s; }
+        .upload-area:hover { background: #f8f9ff; }
+        .file-item { padding: 12px; background: #f8f9fa; border-radius: 8px; margin-top: 12px; }
+        .progress-bar { height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden;
+                        margin-top: 16px; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #667eea, #764ba2);
+                         width: 0%; transition: width 0.3s; }
+        .task-item { padding: 16px; background: #f8f9fa; border-radius: 8px; margin-bottom: 12px; }
+        .task-status { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        .task-status.running { background: #d1ecf1; color: #0c5460; }
+        .task-status.completed { background: #d4edda; color: #155724; }
+        .logs { background: #1e1e1e; color: #00ff00; padding: 16px; border-radius: 8px;
+                font-family: 'Monaco', 'Menlo', monospace; font-size: 12px; max-height: 200px;
+                overflow-y: auto; margin-top: 16px; }
+        .notice { background: #fff3cd; border-left: 4px solid #ffc107; padding: 16px;
+                  border-radius: 4px; margin-bottom: 20px; color: #856404; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 批量提示词测试系统</h1>
+        <p class="subtitle">文件上传 · 在线配置 · 批量执行 · 自动评估</p>
+
+        <div class="notice">
+            <strong>📌 说明：</strong>这是静态预览页面。要使用完整功能，请启动后端服务：
+            <code style="background: #f8f9fa; padding: 2px 6px; border-radius: 4px;">python3 server_simple.py</code>
+            然后访问 <strong>http://localhost:8888</strong>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('upload')">📤 上传数据</div>
+            <div class="tab" onclick="switchTab('config')">⚙️ 模型配置</div>
+            <div class="tab" onclick="switchTab('prompts')">📝 提示词配置</div>
+            <div class="tab" onclick="switchTab('run')">🎯 执行任务</div>
+            <div class="tab" onclick="switchTab('tasks')">📋 任务列表</div>
+        </div>
+
+        <!-- 上传数据 -->
+        <div id="tab-upload" class="tab-content active">
+            <div class="card">
+                <h2><span>📤</span>上传数据文件</h2>
+                <div class="upload-area">
+                    <div style="font-size: 48px; margin-bottom: 16px;">📁</div>
+                    <h3 style="margin-bottom: 8px; color: #333;">点击或拖拽文件到这里</h3>
+                    <p style="color: #666;">支持 Excel (.xlsx, .xls) 和 CSV 文件</p>
+                </div>
+                <div class="status info" style="margin-top: 16px;">
+                    💡 启动后端服务后即可上传文件
+                </div>
+            </div>
+        </div>
+
+        <!-- 模型配置 -->
+        <div id="tab-config" class="tab-content">
+            <div class="card">
+                <h2><span>⚙️</span>模型配置</h2>
+                <div class="grid">
+                    <div class="form-group">
+                        <label>API Key</label>
+                        <input type="text" id="apiKey" value="9f485a0c-c4ea-4590-9f07-6d6925e04620" placeholder="你的API Key">
+                    </div>
+                    <div class="form-group">
+                        <label>Base URL</label>
+                        <input type="text" id="baseUrl" value="https://ark.cn-beijing.volces.com/api/v3" placeholder="https://...">
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="form-group">
+                        <label>模型名称</label>
+                        <input type="text" id="model" value="ep-20250619152516-v97g5" placeholder="模型ID">
+                    </div>
+                    <div class="form-group">
+                        <label>温度 (0-2)</label>
+                        <input type="number" id="temperature" step="0.1" value="0.7">
+                    </div>
+                </div>
+                <button class="btn btn-success" onclick="alert('启动后端服务后才能保存！')">💾 保存配置</button>
+            </div>
+        </div>
+
+        <!-- 提示词配置 -->
+        <div id="tab-prompts" class="tab-content">
+            <div class="card">
+                <h2><span>📝</span>提示词配置</h2>
+                <div class="form-group">
+                    <label>提示词A - 系统提示词</label>
+                    <textarea id="promptA">你是一个智能数据处理助手。请严格执行以下逻辑步骤：
+Step 1: 检查输入文本，提取关键信息字段。
+Step 2: 分析文本内容，识别需要处理的数据项。
+Step 3: 按照指定格式输出处理结果。</textarea>
+                </div>
+                <div class="form-group">
+                    <label>提示词B - 系统提示词</label>
+                    <textarea id="promptB"># Role
+你是一个专业的内容生成助手，负责根据用户需求生成高质量的文本内容。
+
+# Task
+根据输入要求，生成符合格式规范、逻辑清晰的输出内容。</textarea>
+                </div>
+                <button class="btn btn-success" onclick="alert('启动后端服务后才能保存！')">💾 保存提示词</button>
+            </div>
+        </div>
+
+        <!-- 执行任务 -->
+        <div id="tab-run" class="tab-content">
+            <div class="card">
+                <h2><span>🎯</span>执行批量任务</h2>
+                <div class="grid">
+                    <div class="form-group">
+                        <label>选择数据文件</label>
+                        <select><option>请先上传文件</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>输入列名</label>
+                        <select><option>请先上传文件</option></select>
+                    </div>
+                </div>
+                <div class="grid">
+                    <div class="form-group">
+                        <label>提示词类型</label>
+                        <select>
+                            <option value="prompt_a">提示词A</option>
+                            <option value="prompt_b">提示词B</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>测试数量（0=全部）</label>
+                        <input type="number" value="10">
+                    </div>
+                </div>
+                <button class="btn btn-success" disabled>🚀 开始执行</button>
+                <div class="status info" style="margin-top: 16px;">
+                    💡 启动后端服务后即可执行批量任务
+                </div>
+            </div>
+        </div>
+
+        <!-- 任务列表 -->
+        <div id="tab-tasks" class="tab-content">
+            <div class="card">
+                <h2><span>📋</span>任务列表</h2>
+                <div style="text-align: center; color: #999; padding: 40px;">
+                    暂无任务
+                    <br><br>
+                    <small style="font-size: 12px;">启动后端服务后可查看任务列表</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            document.querySelectorAll('.tabs:first-of-type .tab').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>

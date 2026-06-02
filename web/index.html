@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>批量提示词测试系统</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+               background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+               min-height: 100vh; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { color: white; text-align: center; margin-bottom: 30px; font-size: 28px; }
+        .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; 
+                box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        h2 { color: #333; margin-bottom: 16px; font-size: 20px; border-bottom: 2px solid #667eea; 
+             padding-bottom: 10px; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; color: #555; }
+        input[type="text"], input[type="number"], select, textarea {
+            width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;
+            font-size: 14px; transition: border-color 0.3s; font-family: inherit;
+        }
+        input:focus, select:focus, textarea:focus { border-color: #667eea; outline: none; }
+        button { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                 color: white; border: none; padding: 12px 24px; border-radius: 8px;
+                 font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.2s; }
+        button:hover { transform: translateY(-2px); }
+        button:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+        .status { margin-top: 16px; padding: 12px; border-radius: 8px; }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.info { background: #d1ecf1; color: #0c5460; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+        .code-block { background: #1e1e1e; color: #00ff00; padding: 16px; border-radius: 8px;
+                      font-family: 'Monaco', 'Menlo', monospace; font-size: 12px; 
+                      overflow-x: auto; white-space: pre-wrap; }
+        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .stat-item { text-align: center; padding: 16px; background: #f8f9fa; border-radius: 8px; }
+        .stat-number { font-size: 32px; font-weight: bold; color: #667eea; }
+        .stat-label { font-size: 12px; color: #666; }
+        .step { margin-bottom: 24px; padding: 16px; background: #f8f9fa; border-radius: 8px; }
+        .step h3 { color: #667eea; margin-bottom: 10px; }
+        .step-number { display: inline-block; width: 28px; height: 28px; background: #667eea;
+                       color: white; border-radius: 50%; text-align: center; line-height: 28px;
+                       margin-right: 8px; }
+        .copy-btn { font-size: 12px; padding: 6px 12px; margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 批量提示词测试系统</h1>
+        
+        <!-- 使用说明 -->
+        <div class="card">
+            <h2>📖 使用步骤</h2>
+            
+            <div class="step">
+                <h3><span class="step-number">1</span>配置API密钥</h3>
+                <p>打开 <code>config/api_config.yaml</code> 文件，填入你的API密钥</p>
+                <div class="code-block">openai:
+  api_key: "sk-..."
+  base_url: "https://api.openai.com/v1"
+  model: "gpt-4o"
+  temperature: 0.7</div>
+            </div>
+            
+            <div class="step">
+                <h3><span class="step-number">2</span>运行批量生成</h3>
+                <p>在终端执行以下命令之一：</p>
+                <div class="code-block"># 完整流水线（生成 + 评估）
+cd batch_test_system
+python3 main.py pipeline \
+  --input ../outputs/会话处理结果.xlsx \
+  --column "提示词Ainput" \
+  --prompt-type prompt_a \
+  --output results/full_results.xlsx
+
+# 仅批量生成提示词A
+python3 main.py run \
+  --input ../outputs/会话处理结果.xlsx \
+  --column "提示词Ainput" \
+  --prompt-type prompt_a \
+  --output results/prompt_a_results.xlsx
+
+# 仅批量生成提示词B
+python3 main.py run \
+  --input ../outputs/会话处理结果.xlsx \
+  --column "提示词Binput" \
+  --prompt-type prompt_b \
+  --output results/prompt_b_results.xlsx</div>
+            </div>
+            
+            <div class="step">
+                <h3><span class="step-number">3</span>查看结果</h3>
+                <p>生成的结果会保存在 <code>results/</code> 目录下，包含：</p>
+                <ul style="margin-left: 20px; color: #555; line-height: 1.8;">
+                    <li>输入内容和生成的输出</li>
+                    <li>准确性、可读性、完整性三项评分</li>
+                    <li>评分理由和改进建议</li>
+                    <li>自动生成的统计报告（.txt）</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 快速配置区 -->
+        <div class="card">
+            <h2>⚙️ 快速配置</h2>
+            <div class="grid">
+                <div class="form-group">
+                    <label>API Key</label>
+                    <input type="text" id="apiKey" placeholder="sk-..." value="">
+                </div>
+                <div class="form-group">
+                    <label>Base URL</label>
+                    <input type="text" id="baseUrl" placeholder="https://api.openai.com/v1" value="https://api.openai.com/v1">
+                </div>
+            </div>
+            <div class="grid">
+                <div class="form-group">
+                    <label>模型</label>
+                    <select id="model">
+                        <option value="gpt-4o">gpt-4o</option>
+                        <option value="gpt-4">gpt-4</option>
+                        <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>温度 (0-2)</label>
+                    <input type="number" id="temperature" step="0.1" min="0" max="2" value="0.7">
+                </div>
+            </div>
+            <div class="status info">
+                💡 配置文件位置: <code>batch_test_system/config/api_config.yaml</code>
+            </div>
+        </div>
+
+        <!-- 输出预览 -->
+        <div class="card">
+            <h2>📊 输出示例</h2>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number">109</div>
+                    <div class="stat-label">总条数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">8.5</div>
+                    <div class="stat-label">平均分</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">95</div>
+                    <div class="stat-label">≥7分</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">14</div>
+                    <div class="stat-label"><7分</div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <h3 style="margin-bottom: 12px; color: #333;">评估结果示例：</h3>
+                <div class="code-block">{
+  "accuracy_score": 9,
+  "accuracy_reason": "输出格式完全符合XML要求，信息提取准确无误",
+  "readability_score": 8,
+  "readability_reason": "格式清晰，内容易读，对话结构分明",
+  "completeness_score": 9,
+  "completeness_reason": "包含了所有必要字段，没有遗漏信息",
+  "overall_score": 8.67,
+  "suggestions": "可以进一步优化对话格式的对齐，增加空行提升可读性"
+}</div>
+            </div>
+        </div>
+
+        <!-- 命令行快捷复制 -->
+        <div class="card">
+            <h2>💻 常用命令</h2>
+            
+            <div style="margin-bottom: 16px;">
+                <label>完整流水线（推荐）</label>
+                <div class="code-block" id="cmd1">cd batch_test_system && python3 main.py pipeline \
+  --input ../outputs/会话处理结果.xlsx \
+  --column "提示词Ainput" \
+  --prompt-type prompt_a \
+  --output results/prompt_a_evaluated.xlsx</div>
+                <button class="copy-btn" onclick="copyToClipboard('cmd1')">复制命令</button>
+            </div>
+            
+            <div style="margin-bottom: 16px;">
+                <label>仅生成提示词B</label>
+                <div class="code-block" id="cmd2">cd batch_test_system && python3 main.py run \
+  --input ../outputs/会话处理结果.xlsx \
+  --column "提示词Binput" \
+  --prompt-type prompt_b \
+  --output results/prompt_b_results.xlsx</div>
+                <button class="copy-btn" onclick="copyToClipboard('cmd2')">复制命令</button>
+            </div>
+            
+            <div style="margin-bottom: 16px;">
+                <label>仅评估已有结果</label>
+                <div class="code-block" id="cmd3">cd batch_test_system && python3 main.py evaluate \
+  --input results/prompt_a_results.xlsx \
+  --output results/prompt_a_evaluated.xlsx</div>
+                <button class="copy-btn" onclick="copyToClipboard('cmd3')">复制命令</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>💡 提示</h2>
+            <ul style="color: #555; line-height: 2;">
+                <li>如需调整提示词内容，请编辑 <code>config/prompts_config.yaml</code></li>
+                <li>运行时使用 <code>--delay 2.0</code> 参数可增大调用间隔，避免限流</li>
+                <li>自定义温度使用 <code>--temperature 0.3</code> 参数（数值越低越准确）</li>
+                <li>评估模型可单独配置，使用更强的模型获得更准确的评分</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('命令已复制到剪贴板！');
+            }).catch(() => {
+                // 降级方案
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('命令已复制到剪贴板！');
+            });
+        }
+        
+        // 保存配置到localStorage
+        function saveConfig() {
+            const config = {
+                apiKey: document.getElementById('apiKey').value,
+                baseUrl: document.getElementById('baseUrl').value,
+                model: document.getElementById('model').value,
+                temperature: document.getElementById('temperature').value
+            };
+            localStorage.setItem('promptTestConfig', JSON.stringify(config));
+            alert('配置已保存到浏览器（请手动填入config/api_config.yaml文件）');
+        }
+        
+        // 加载配置
+        window.onload = function() {
+            const saved = localStorage.getItem('promptTestConfig');
+            if (saved) {
+                const config = JSON.parse(saved);
+                document.getElementById('apiKey').value = config.apiKey || '';
+                document.getElementById('baseUrl').value = config.baseUrl || 'https://api.openai.com/v1';
+                document.getElementById('model').value = config.model || 'gpt-4o';
+                document.getElementById('temperature').value = config.temperature || '0.7';
+            }
+        };
+    </script>
+</body>
+</html>

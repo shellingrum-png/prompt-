@@ -1,5 +1,7 @@
 # 🚀 批量提示词测试系统
 
+> 注意：以下所有命令默认在**项目根目录**下执行
+
 一个功能完整的批量提示词测试工具，支持文件上传、在线配置、批量API调用、结果自动下载。
 
 ## ✨ 功能特性
@@ -33,8 +35,15 @@ batch_test_system/
 
 ### 1. 启动服务
 
+如果你是刚从GitHub克隆下来：
 ```bash
-cd batch_test_system
+# 先进入项目目录
+cd prompt-
+python3 server_simple.py
+```
+
+如果你已经在项目目录里，直接运行：
+```bash
 python3 server_simple.py
 ```
 

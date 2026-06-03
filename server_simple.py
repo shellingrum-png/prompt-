@@ -82,6 +82,22 @@ class WebHandler(BaseHTTPRequestHandler):
             self.handle_get_config()
         elif path == '/api/files':
             self.handle_list_files()
+        elif path.startswith('/api/file-columns'):
+            # 获取文件列名
+            params = urllib.parse.parse_qs(parsed.query)
+            filename = params.get('filename', [''])[0]
+            if filename:
+                filepath = os.path.join(UPLOADS_DIR, filename)
+                try:
+                    if filename.endswith(('.xlsx', '.xls')):
+                        df = pd.read_excel(filepath)
+                    else:
+                        df = pd.read_csv(filepath)
+                    self.send_json({'columns': df.columns.tolist()})
+                except Exception as e:
+                    self.send_json({'columns': [], 'error': str(e)})
+            else:
+                self.send_json({'columns': []})
         elif path == '/api/tasks':
             self.handle_list_tasks()
         elif path.startswith('/api/tasks/'):
@@ -575,7 +591,7 @@ class WebHandler(BaseHTTPRequestHandler):
                 <div class="grid">
                     <div class="form-group">
                         <label>选择数据文件</label>
-                        <select id="runFile"></select>
+                        <select id="runFile" onchange="loadFileColumns(this.value)"></select>
                     </div>
                     <div class="form-group">
                         <label>输入列名</label>
@@ -726,13 +742,20 @@ class WebHandler(BaseHTTPRequestHandler):
             const data = await res.json();
             const fileSelect = document.getElementById('runFile');
             fileSelect.innerHTML = data.files.map(f => `<option value="${f.name}">${f.name}</option>`).join('');
-            
-            if (data.preview) {
-                document.getElementById('runColumn').innerHTML = 
-                    data.preview.columns.map(c => `<option value="${c}">${c}</option>`).join('');
+
+            if (data.files.length > 0) {
+                loadFileColumns(data.files[0].name);
             }
         }
-        
+
+        async function loadFileColumns(filename) {
+            if (!filename) return;
+            const res = await fetch(`/api/file-columns?filename=${encodeURIComponent(filename)}`);
+            const data = await res.json();
+            const colSelect = document.getElementById('runColumn');
+            colSelect.innerHTML = data.columns.map(c => `<option value="${c}">${c}</option>`).join('');
+        }
+
         async function startTask() {
             const limit = parseInt(document.getElementById('testLimit').value);
             const params = {

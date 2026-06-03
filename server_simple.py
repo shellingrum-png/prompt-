@@ -374,7 +374,9 @@ class WebHandler(BaseHTTPRequestHandler):
 
         <div id="tab-config" class="tab-content">
             <div class="card">
-                <h2><span>⚙️</span>模型配置</h2>
+                <h2><span>⚙️</span>模型配置</h2><div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin-bottom: 16px; border-radius: 4px;">
+    <strong>🔒 安全提示：</strong>API密钥仅保存在你本地的 config/api_config.json 文件中，不会上传到任何服务器。
+</div>
                 <div class="grid">
                     <div class="form-group">
                         <label>API Key</label>

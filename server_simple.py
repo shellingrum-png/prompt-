@@ -213,6 +213,7 @@ class WebHandler(BaseHTTPRequestHandler):
                 input_text = str(row[params['column']]) if pd.notna(row[params['column']]) else ''
                 
                 try:
+                    # ========== 步骤1：生成输出 ==========
                     headers = {
                         'Authorization': f'Bearer {api_key}',
                         'Content-Type': 'application/json'
@@ -235,11 +236,98 @@ class WebHandler(BaseHTTPRequestHandler):
                 except Exception as e:
                     output = f"调用失败: {str(e)}"
                 
+                # ========== 步骤2：自动打分（如果启用） ==========
+                accuracy_score = ''
+                accuracy_reason = ''
+                readability_score = ''
+                readability_reason = ''
+                
+                if params.get('enable_auto_score', True) and 'API错误' not in output and '调用失败' not in output:
+                    try:
+                        eval_api_key = api_config.get('evaluation', {}).get('api_key', '') or api_key
+                        eval_base_url = api_config.get('evaluation', {}).get('base_url', '') or base_url
+                        eval_model = api_config.get('evaluation', {}).get('model', '') or model
+                        eval_temp = api_config.get('evaluation', {}).get('temperature', 0.3)
+                        
+                        if eval_api_key and eval_base_url and eval_model:
+                            # 专业的打分提示词
+                            score_prompt = '''你是一个专业的AI输出质量评估专家。请对以下生成的输出进行质量评估，从两个维度进行打分：
+
+【评估维度】
+1. 准确性（0-10分）：输出内容是否准确回答了输入的问题？信息是否正确、完整？是否符合提示词的要求？
+2. 可读性（0-10分）：输出格式是否清晰？语言是否通顺、易读？结构是否合理？
+
+【输入数据】
+系统提示词（System Prompt）：
+{system_prompt}
+
+用户输入（User Input）：
+{input_text}
+
+生成输出（Model Output）：
+{output}
+
+【输出要求】
+请严格按照以下JSON格式输出，不要包含任何其他内容：
+{{
+    "accuracy_score": 分数,
+    "accuracy_reason": "准确性评分理由，简要说明",
+    "readability_score": 分数,
+    "readability_reason": "可读性评分理由，简要说明"
+}}'''
+                            
+                            score_headers = {
+                                'Authorization': f'Bearer {eval_api_key}',
+                                'Content-Type': 'application/json'
+                            }
+                            score_data = {
+                                'model': eval_model,
+                                'messages': [
+                                    {'role': 'system', 'content': score_prompt.format(
+                                        system_prompt=system_prompt,
+                                        input_text=input_text,
+                                        output=output
+                                    )}
+                                ],
+                                'temperature': eval_temp
+                            }
+                            score_response = requests.post(f'{eval_base_url}/chat/completions',
+                                                           headers=score_headers, json=score_data, timeout=120)
+                            
+                            if score_response.status_code == 200:
+                                score_result = score_response.json()
+                                score_text = score_result['choices'][0]['message']['content']
+                                
+                                # 尝试解析JSON
+                                import json as json_lib
+                                try:
+                                    # 提取JSON部分
+                                    if '{' in score_text and '}' in score_text:
+                                        json_start = score_text.index('{')
+                                        json_end = score_text.rindex('}') + 1
+                                        score_json = score_text[json_start:json_end]
+                                        score_data = json_lib.loads(score_json)
+                                        accuracy_score = score_data.get('accuracy_score', '')
+                                        accuracy_reason = score_data.get('accuracy_reason', '')
+                                        readability_score = score_data.get('readability_score', '')
+                                        readability_reason = score_data.get('readability_reason', '')
+                                except:
+                                    # 解析失败，保留原始文本
+                                    accuracy_reason = score_text[:200]
+                            else:
+                                accuracy_reason = f"打分API错误: {score_response.status_code}"
+                    except Exception as e:
+                        accuracy_reason = f"打分失败: {str(e)}"
+                
                 result = {
                     'index': idx, 
                     'input': input_text, 
                     'output': output, 
                     'system_prompt': system_prompt[:100] + '...' if len(system_prompt) > 100 else system_prompt,
+                    'accuracy_score': accuracy_score,
+                    'accuracy_reason': accuracy_reason,
+                    'readability_score': readability_score,
+                    'readability_reason': readability_reason,
                     'success': 'API错误' not in output and '调用失败' not in output
                 }
                 results.append(result)
@@ -488,6 +576,12 @@ class WebHandler(BaseHTTPRequestHandler):
                 document.getElementById('model').value = data.api.openai.model || '';
                 document.getElementById('temperature').value = data.api.openai.temperature || 0.7;
             }
+            if (data.api && data.api.evaluation) {
+                document.getElementById('evalApiKey').value = data.api.evaluation.api_key || '';
+                document.getElementById('evalBaseUrl').value = data.api.evaluation.base_url || '';
+                document.getElementById('evalModel').value = data.api.evaluation.model || '';
+                document.getElementById('evalTemperature').value = data.api.evaluation.temperature || 0.3;
+            }
             if (data.prompts) {
                 if (data.prompts.prompt_a) document.getElementById('promptA').value = data.prompts.prompt_a.system_prompt || '';
                 if (data.prompts.prompt_b) document.getElementById('promptB').value = data.prompts.prompt_b.system_prompt || '';
@@ -500,7 +594,12 @@ class WebHandler(BaseHTTPRequestHandler):
                 base_url: document.getElementById('baseUrl').value,
                 model: document.getElementById('model').value,
                 temperature: parseFloat(document.getElementById('temperature').value)
-            }, evaluation: {}}};
+            }, evaluation: {
+                api_key: document.getElementById('evalApiKey').value,
+                base_url: document.getElementById('evalBaseUrl').value,
+                model: document.getElementById('evalModel').value,
+                temperature: parseFloat(document.getElementById('evalTemperature').value)
+            }}};
             config.api.evaluation = config.api.openai;
             
             await fetch('/api/config', {
@@ -567,7 +666,8 @@ class WebHandler(BaseHTTPRequestHandler):
                 prompt_type: document.getElementById('runPrompt').value,
                 mode: 'run',
                 delay: 0.5,
-                limit: limit > 0 ? limit : null
+                limit: limit > 0 ? limit : null,
+                enable_auto_score: document.getElementById('enableAutoScore').checked
             };
             
             const res = await fetch('/api/run', {

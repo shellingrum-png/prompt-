@@ -516,6 +516,38 @@ class WebHandler(BaseHTTPRequestHandler):
                     </label>
                 </div>
                 </div>
+                
+                <div style="margin-top: 24px; padding-top: 24px; border-top: 2px solid #eee;">
+                    <h3 style="color: #333; margin-bottom: 16px;">⚖️ 打分模型配置（自动评估使用）</h3>
+                    <div class="grid">
+                        <div class="form-group">
+                            <label>打分模型 API Key（可与生成模型相同）</label>
+                            <input type="text" id="evalApiKey" value="">
+                        </div>
+                        <div class="form-group">
+                            <label>打分模型 Base URL</label>
+                            <input type="text" id="evalBaseUrl" value="">
+                        </div>
+                    </div>
+                    <div class="grid">
+                        <div class="form-group">
+                            <label>打分模型名称</label>
+                            <input type="text" id="evalModel" value="">
+                        </div>
+                        <div class="form-group">
+                            <label>打分模型温度</label>
+                            <input type="number" id="evalTemperature" step="0.1" value="0.3">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group" style="margin-top: 16px;">
+                    <label style="display: flex; align-items: center; cursor: pointer;">
+                        <input type="checkbox" id="enableAutoScore" checked style="width: auto; margin-right: 10px;">
+                        ✅ 启用自动打分功能（生成输出后自动评估准确性和可读性）
+                    </label>
+                </div>
+                
                 <button class="btn btn-success" onclick="saveConfig()">💾 保存配置</button>
                 <span id="configStatus"></span>
             </div>
@@ -606,6 +638,12 @@ class WebHandler(BaseHTTPRequestHandler):
                 document.getElementById('baseUrl').value = data.api.openai.base_url || '';
                 document.getElementById('model').value = data.api.openai.model || '';
                 document.getElementById('temperature').value = data.api.openai.temperature || 0.7;
+            }
+            if (data.api && data.api.evaluation) {
+                document.getElementById('evalApiKey').value = data.api.evaluation.api_key || '';
+                document.getElementById('evalBaseUrl').value = data.api.evaluation.base_url || '';
+                document.getElementById('evalModel').value = data.api.evaluation.model || '';
+                document.getElementById('evalTemperature').value = data.api.evaluation.temperature || 0.3;
             }
             if (data.api && data.api.evaluation) {
                 document.getElementById('evalApiKey').value = data.api.evaluation.api_key || '';

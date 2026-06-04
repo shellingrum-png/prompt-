@@ -69,6 +69,9 @@ class WebHandler(BaseHTTPRequestHandler):
     def send_html(self, html, status=200):
         self.send_response(status)
         self.send_header('Content-Type', 'text/html; charset=utf-8')
+        self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+        self.send_header('Pragma', 'no-cache')
+        self.send_header('Expires', '0')
         self.end_headers()
         self.wfile.write(html.encode('utf-8'))
     
@@ -532,38 +535,7 @@ class WebHandler(BaseHTTPRequestHandler):
                     </label>
                 </div>
                 </div>
-                
-                <div style="margin-top: 24px; padding-top: 24px; border-top: 2px solid #eee;">
-                    <h3 style="color: #333; margin-bottom: 16px;">⚖️ 打分模型配置（自动评估使用）</h3>
-                    <div class="grid">
-                        <div class="form-group">
-                            <label>打分模型 API Key（可与生成模型相同）</label>
-                            <input type="text" id="evalApiKey" value="">
-                        </div>
-                        <div class="form-group">
-                            <label>打分模型 Base URL</label>
-                            <input type="text" id="evalBaseUrl" value="">
-                        </div>
-                    </div>
-                    <div class="grid">
-                        <div class="form-group">
-                            <label>打分模型名称</label>
-                            <input type="text" id="evalModel" value="">
-                        </div>
-                        <div class="form-group">
-                            <label>打分模型温度</label>
-                            <input type="number" id="evalTemperature" step="0.1" value="0.3">
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="form-group" style="margin-top: 16px;">
-                    <label style="display: flex; align-items: center; cursor: pointer;">
-                        <input type="checkbox" id="enableAutoScore" checked style="width: auto; margin-right: 10px;">
-                        ✅ 启用自动打分功能（生成输出后自动评估准确性和可读性）
-                    </label>
-                </div>
-                
+
                 <button class="btn btn-success" onclick="saveConfig()">💾 保存配置</button>
                 <span id="configStatus"></span>
             </div>
